@@ -1,8 +1,8 @@
 {
-	"name": "kha",
-	"displayName": "Kha",
-	"description": "Kha support",
-	"version": "20.4.0",
+	"name": "kinc",
+	"displayName": "Kinc",
+	"description": "Kinc support",
+	"version": "20.10.0",
 	"publisher": "kodetech",
 	"engines": {
 		"vscode": "^1.31.0"
@@ -11,47 +11,47 @@
 		"Other"
 	],
 	"keywords": [
-		"Kha",
-		"Haxe"
+		"Kinc",
+		"Kore"
 	],
 	"activationEvents": [
-		"workspaceContains:khafile.js",
-		"onCommand:kha.init",
-		"onCommand:kha.compile"
+		"workspaceContains:kincfile.js",
+		"onCommand:kinc.init",
+		"onCommand:kinc.compile"
 	],
 	"main": "./extension",
 	"contributes": {
 		"commands": [
 			{
-				"command": "kha.init",
+				"command": "kinc.init",
 				"title": "Init Project",
-				"category": "Kha"
+				"category": "Kinc"
 			}
 		],
 		"configuration": {
 			"type": "object",
-			"title": "Kha",
+			"title": "Kinc",
 			"properties": {
-				"kha.khaPath": {
+				"kinc.kincPath": {
 					"type": "string",
 					"default": "",
-					"description": "Points to a Kha directory."
+					"description": "Points to a Kinc directory."
 				},
-				"kha.ffmpeg": {
+				"kinc.ffmpeg": {
 					"type": "string",
 					"default": "",
 					"description": "Path to ffmpeg for extended audio and video format support."
 				},
-				"kha.buildDir": {
+				"kinc.buildDir": {
 					"type": "string",
 					"default": "build",
-					"description": "Relative path to the Kha build dir for the project."
+					"description": "Relative path to the Kinc build dir for the project."
 				}
 			}
 		},
 		"taskDefinitions": [
 			{
-				"type": "Kha",
+				"type": "Kinc",
 				"required": [
 					"target"
 				],
@@ -66,7 +66,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Kode/vscode-kha"
+		"url": "https://github.com/Kode/vscode-kinc"
 	},
 	"scripts": {
 		"postinstall": "node ./node_modules/vscode/bin/install",
@@ -80,6 +80,6 @@
 		"vscode": "^1.1.36"
 	},
 	"extensionDependencies": [
-		"nadako.vshaxe"
+		"ms-vscode.cpptools"
 	]
 }
