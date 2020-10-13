@@ -7,18 +7,18 @@ const vscode = require('vscode');
 
 let channel = null;
 
-function findKha() {
-	let localkhapath = path.resolve(vscode.workspace.rootPath, 'Kha');
-	if (fs.existsSync(localkhapath) && fs.existsSync(path.join(localkhapath, 'Tools', 'khamake', 'out', 'main.js'))) return localkhapath;
-	let khapath = vscode.workspace.getConfiguration('kha').khaPath;
-	if (khapath.length > 0) {
-		return path.isAbsolute(khapath) ? khapath : path.resolve(vscode.workspace.rootPath, khapath);
+function findKinc() {
+	let localkincpath = path.resolve(vscode.workspace.rootPath, 'Kinc');
+	if (fs.existsSync(localkincpath) && fs.existsSync(path.join(localkincpath, 'Tools', 'kincmake', 'out', 'main.js'))) return localkincpath;
+	let kincpath = vscode.workspace.getConfiguration('kinc').kincPath;
+	if (kincpath.length > 0) {
+		return path.isAbsolute(kincpath) ? kincpath : path.resolve(vscode.workspace.rootPath, kincpath);
 	}
-	return path.join(vscode.extensions.getExtension('kodetech.kha').extensionPath, 'Kha');
+	return path.join(vscode.extensions.getExtension('kodetech.kinc').extensionPath, 'Kinc');
 }
 
 function findFFMPEG() {
-	return vscode.workspace.getConfiguration('kha').ffmpeg;
+	return vscode.workspace.getConfiguration('kinc').ffmpeg;
 }
 
 function compile(target, silent) {
@@ -32,21 +32,26 @@ function compile(target, silent) {
 		return;
 	}
 
+	if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'kincfile.js'))) {
+		channel.appendLine('No kincfile found.');
+		return;
+	}
+
 	if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'khafile.js'))) {
-		channel.appendLine('No khafile found.');
+		channel.appendLine('khafile found.');
 		return;
 	}
 
 	let options = {
 		from: vscode.workspace.rootPath,
-		to: path.join(vscode.workspace.rootPath, vscode.workspace.getConfiguration('kha').buildDir),
-		projectfile: 'khafile.js',
+		to: path.join(vscode.workspace.rootPath, vscode.workspace.getConfiguration('kinc').buildDir),
+		projectfile: 'kincfile.js',
 		target: target,
 		vr: 'none',
 		pch: false,
 		intermediate: '',
 		graphics: 'default',
-		visualstudio: 'vs2017',
+		visualstudio: 'vs2019',
 		kha: '',
 		haxe: '',
 		ogg: '',
@@ -74,7 +79,7 @@ function compile(target, silent) {
 		parallelAssetConversion: 0,
 		haxe3: false
 	};
-	return require(path.join(findKha(), 'Tools', 'khamake', 'out', 'main.js'))
+	return require(path.join(findKinc(), 'Tools', 'kincmake', 'out', 'main.js'))
 	.run(options, {
 		info: message => {
 			channel.appendLine(message);
@@ -88,7 +93,7 @@ let KhaDisplayArgumentsProvider = {
 	init: (api, activationChangedCallback) => {
 		this.api = api;
 		this.activationChangedCallback = activationChangedCallback;
-		this.description = 'Kha project';
+		this.description = 'Kinc project';
 	},
 	activate: (provideArguments) => {
 		this.updateArgumentsCallback = provideArguments;
@@ -114,7 +119,7 @@ let KhaDisplayArgumentsProvider = {
 
 function updateHaxeArguments(rootPath, hxmlPath) {
 	const hxml = fs.readFileSync(hxmlPath, 'utf8');
-	const buildDir = vscode.workspace.getConfiguration('kha').buildDir;
+	const buildDir = vscode.workspace.getConfiguration('kinc').buildDir;
 	KhaDisplayArgumentsProvider.update('--cwd ' + path.join(rootPath, buildDir) + '\n' + hxml);
 }
 
@@ -132,87 +137,47 @@ function sys() {
 	}
 }
 
-function updateHaxe(vshaxe) {
-	vshaxe.haxeExecutable.configuration.executable = path.join(findKha(), 'Tools', 'haxe', 'haxe' + sys());
-	vshaxe.haxeExecutable.configuration.isCommand = false;
-	vshaxe.haxeExecutable.configuration.env = {
-		'HAXE_STD_PATH': path.join(findKha(), 'Tools', 'haxe', 'std')
-	};
-	vshaxe.haxeExecutable._onDidChangeConfiguration.fire(vshaxe.haxeExecutable.configuration);
-}
-
-function configureVsHaxe(rootPath) {
-	let vshaxe = vscode.extensions.getExtension('nadako.vshaxe').exports;
-	KhaDisplayArgumentsProvider.init(vshaxe, (active) => {
-		if (!active) return;
-
-		const hxmlPath = path.join(rootPath, 'build', 'project-debug-html5.hxml');
-		if (fs.existsSync(hxmlPath)) {
-			updateHaxe(vshaxe);
-			updateHaxeArguments(rootPath, hxmlPath);
-		}
-		else {
-			compile('debug-html5', true).then(() => {
-				updateHaxe(vshaxe);
-				updateHaxeArguments(rootPath, hxmlPath);
-			});
-		}
-	});
-	updateHaxe(vshaxe);
-	vshaxe.registerDisplayArgumentsProvider('Kha', KhaDisplayArgumentsProvider);
-}
-
 function chmodEverything() {
 	if (os.platform() === 'win32') {
 		return;
 	}
-	const base = findKha();
-	fs.chmodSync(path.join(base, 'Tools', 'haxe', 'haxe' + sys()), 0o755);
-	fs.chmodSync(path.join(base, 'Tools', 'kravur', 'kravur' + sys()), 0o755);
-	fs.chmodSync(path.join(base, 'Tools', 'lame', 'lame' + sys()), 0o755);
-	fs.chmodSync(path.join(base, 'Tools', 'oggenc', 'oggenc' + sys()), 0o755);
-	fs.chmodSync(path.join(base, 'Kinc', 'Tools', 'kraffiti', 'kraffiti' + sys()), 0o755);
-	fs.chmodSync(path.join(base, 'Kinc', 'Tools', 'krafix', 'krafix' + sys()), 0o755);
+	const base = findKinc();
+	fs.chmodSync(path.join(base, 'Tools', 'kraffiti', 'kraffiti' + sys()), 0o755);
+	fs.chmodSync(path.join(base, 'Tools', 'krafix', 'krafix' + sys()), 0o755);
 }
 
 function checkProject(rootPath) {
-	if (!fs.existsSync(path.join(rootPath, 'khafile.js'))) {
+	if (!fs.existsSync(path.join(rootPath, 'kincfile.js'))) {
 		return;
 	}
 
-	if (findKha() === path.join(vscode.extensions.getExtension('kodetech.kha').extensionPath, 'Kha')) {
+	if (fs.existsSync(path.join(rootPath, 'khafile.js'))) {
+		return;
+	}
+
+	if (findKinc() === path.join(vscode.extensions.getExtension('kodetech.kinc').extensionPath, 'Kinc')) {
 		chmodEverything()
 	}
 
-	configureVsHaxe(rootPath);
-
 	const configuration = vscode.workspace.getConfiguration();
-	const buildDir = vscode.workspace.getConfiguration('kha').buildDir;
+	const buildDir = vscode.workspace.getConfiguration('kinc').buildDir;
 	let config = configuration.get('launch');
 	config.configurations = config.configurations.filter((value) => {
-		return !value.name.startsWith('Kha: ');
+		return !value.name.startsWith('Kinc: ');
 	});
 	config.configurations.push({
-		type: 'electron',
+		type: 'kinc',
 		request: 'launch',
-		name: 'Kha: HTML5',
-		appDir: '${workspaceFolder}/' + buildDir + '/debug-html5',
-		cwd: '${workspaceFolder}/' + buildDir + '/debug-html5',
-		sourceMaps: true,
-		preLaunchTask: 'Kha: Build for Debug HTML5',
+		name: 'Kinc: Launch',
+		appDir: '${workspaceFolder}/' + buildDir,
+		cwd: '${workspaceFolder}/' + buildDir,
+		preLaunchTask: 'Kinc: Build',
 		internalConsoleOptions: 'openOnSessionStart',
 	});
-	config.configurations.push({
-		type: 'krom',
-		request: 'launch',
-		name: 'Kha: Krom',
-		preLaunchTask: 'Kha: Build for Krom',
-		internalConsoleOptions: 'openOnSessionStart',
-	})
 	configuration.update('launch', config, false);
 }
 
-const KhaTaskProvider = {
+const KincTaskProvider = {
 	provideTasks: () => {
 		let workspaceRoot = vscode.workspace.rootPath;
 		if (!workspaceRoot) {
@@ -220,67 +185,42 @@ const KhaTaskProvider = {
 		}
 
 		const systems = [
-			{ arg: 'debug-html5', name: 'Debug HTML5', default: true },
-			{ arg: 'krom', name: 'Krom', default: false },
-			{ arg: 'html5', name: 'HTML5', default: false },
 			{ arg: 'windows', name: 'Windows', default: false },
-			{ arg: 'windows', name: 'Windows (full build)', default: false, full: true },
 			{ arg: 'windows', name: 'Windows (Direct3D 12)', default: false, graphics: 'direct3d12' },
-			{ arg: 'windows', name: 'Windows (Direct3D 12, full build)', default: false, full: true, graphics: 'direct3d12' },
 			{ arg: 'windows', name: 'Windows (Direct3D 9)', default: false, graphics: 'direct3d9' },
-			{ arg: 'windows', name: 'Windows (Direct3D 9, full build)', default: false, full: true, graphics: 'direct3d9' },
 			{ arg: 'windows', name: 'Windows (Vulkan)', default: false, graphics: 'vulkan' },
-			{ arg: 'windows', name: 'Windows (Vulkan, full build)', default: false, full: true, graphics: 'vulkan' },
 			{ arg: 'windows', name: 'Windows (OpenGL)', default: false, graphics: 'opengl' },
-			{ arg: 'windows', name: 'Windows (OpenGL, full build)', default: false, full: true, graphics: 'opengl' },
 			{ arg: 'windowsapp', name: 'Windows Universal', default: false },
-			{ arg: 'windowsapp', name: 'Windows Universal (full build)', default: false, full: true },
 			{ arg: 'osx', name: 'macOS', default: false },
-			{ arg: 'osx', name: 'macOS (full build)', default: false, full: true },
 			{ arg: 'osx', name: 'macOS (OpenGL)', default: false, graphics: 'opengl' },
-			{ arg: 'osx', name: 'macOS (OpenGL, full build)', default: false, full: true, graphics: 'opengl' },
 			{ arg: 'linux', name: 'Linux', default: false },
-			{ arg: 'linux', name: 'Linux (full build)', default: false, full: true },
 			{ arg: 'linux', name: 'Linux (Vulkan)', default: false, graphics: 'vulkan' },
-			{ arg: 'linux', name: 'Linux (Vulkan, full build)', default: false, full: true, graphics: 'vulkan' },
 			{ arg: 'android', name: 'Android', default: false },
-			{ arg: 'android', name: 'Android (full build)', default: false, full: true },
-			{ arg: 'android-native', name: 'Android (native)', default: false },
-			{ arg: 'android-native', name: 'Android (native, full build)', default: false, full: true },
 			{ arg: 'ios', name: 'iOS', default: false },
 			{ arg: 'ios', name: 'iOS (OpenGL)', default: false, graphics: 'opengl' },
 			{ arg: 'pi', name: 'Raspberry Pi', default: false },
-			{ arg: 'pi', name: 'Raspberry Pi (full build)', default: false, full: true },
 			{ arg: 'tvos', name: 'tvOS', default: false },
 			{ arg: 'tizen', name: 'Tizen', default: false },
-			{ arg: 'flash', name: 'Flash', default: false },
-			{ arg: 'node', name: 'Node.js', default: false },
-			{ arg: 'unity', name: 'Unity', default: false },
-			{ arg: 'xna', name: 'XNA', default: false },
-			{ arg: 'psm', name: 'PlayStation Mobile', default: false },
 			{ arg: 'java', name: 'Java', default: false },
-			{ arg: 'wpf', name: 'WPF', default: false },
+			{ arg: 'html5', name: 'HTML5', default: false },
 			{ arg: 'ps4', name: 'PlayStation 4', default: false },
 			{ arg: 'xboxone', name: 'Xbox One', default: false },
 			{ arg: 'switch', name: 'Switch', default: false }
+			{ arg: 'ps5', name: 'PlayStation 5', default: false },
+			{ arg: 'xboxscarlett', name: 'Xbox Series X|S', default: false },
+			{ arg: 'stadia', name: 'Stadia', default: false }
 		];
 
 		let tasks = [];
 		for (const system of systems) {
 			let args = [system.arg];
 
-			if (system.arg === 'krom' || system.arg === 'debug-html5') {
-				args.push('--debug');
-			}
-
 			if (findFFMPEG().length > 0) {
 				args.push('--ffmpeg');
 				args.push(findFFMPEG());
 			}
 
-			if (system.full) {
-				args.push('--compile');
-			}
+			args.push('--compile');
 
 			if (system.graphics) {
 				args.push('--graphics');
@@ -288,18 +228,18 @@ const KhaTaskProvider = {
 			}
 
 			let kind = {
-				type: 'Kha',
+				type: 'Kinc',
 				target: system.name,
 			}
 
 			let task = null;
-			let khamakePath = path.join(findKha(), 'make.js');
+			let kincmakePath = path.join(findKinc(), 'make.js');
 
 			// On Windows, git bash shell won't accept backward slashes and will fail,
 			// so we explicitly need to convert path to unix-style.
 			const winShell = vscode.workspace.getConfiguration('terminal.integrated.shell').get('windows');
 			if (os.platform() === 'win32' && winShell && winShell.indexOf('bash.exe') > -1) {
-				khamakePath = khamakePath.replace(/\\/g, '/');
+				kincmakePath = kincmakePath.replace(/\\/g, '/');
 			}
 
 			if (vscode.env.appName.includes('Kode')) {
@@ -308,10 +248,10 @@ const KhaTaskProvider = {
 					const dir = exec.substring(0, exec.lastIndexOf('/'));
 					exec = path.join(dir, '..', '..', '..', '..', 'MacOS', 'Electron');
 				}
-				task = new vscode.Task(kind, `Build for ${system.name}`, 'Kha', new vscode.ProcessExecution(exec, ['--khamake', khamakePath].concat(args), {cwd: workspaceRoot}), ['$haxe-absolute', '$haxe']);
+				task = new vscode.Task(kind, `Build for ${system.name}`, 'Kinc', new vscode.ProcessExecution(exec, ['--kincmake', kincmakePath].concat(args), {cwd: workspaceRoot}), ['$msCompile']);
 			}
 			else {
-				task = new vscode.Task(kind, vscode.TaskScope.Workspace, `Build for ${system.name}`, 'Kha', new vscode.ShellExecution('node', [khamakePath].concat(args)), ['$haxe-absolute', '$haxe']);
+				task = new vscode.Task(kind, vscode.TaskScope.Workspace, `Build for ${system.name}`, 'Kinc', new vscode.ShellExecution('node', [kincmakePath].concat(args)), ['$msCompile']);
 			}
 			task.group = vscode.TaskGroup.Build;
 			tasks.push(task);
@@ -324,20 +264,19 @@ const KhaTaskProvider = {
 	}
 }
 
-const KhaDebugProvider = {
+const KincDebugProvider = {
 	provideDebugConfigurations: (folder) => {
 		let configs = [];
 
 		folder.uri;
 
-		const buildDir = vscode.workspace.getConfiguration('kha').buildDir;
+		const buildDir = vscode.workspace.getConfiguration('kinc').buildDir;
 		configs.push({
-			name: 'Kha: HTML5',
+			name: 'Kinc: Launch',
 			request: 'launch',
-			type: 'electron',
-			appDir: '${workspaceFolder}/' + buildDir + '/debug-html5',
-			sourceMaps: true,
-			preLaunchTask: 'Kha: Build for Debug HTML5',
+			type: 'kinc',
+			appDir: '${workspaceFolder}/' + buildDir,
+			preLaunchTask: 'Kinc: Build',
 			internalConsoleOptions: 'openOnSessionStart',
 		});
 
@@ -348,20 +287,20 @@ const KhaDebugProvider = {
 	}
 }
 
-let currentTarget = 'HTML5';
+//let currentTarget = 'HTML5';
 
 exports.activate = (context) => {
-	channel = vscode.window.createOutputChannel('Kha');
+	channel = vscode.window.createOutputChannel('Kinc');
 
 	if (vscode.workspace.rootPath) {
 		checkProject(vscode.workspace.rootPath);
 	}
 
-	let provider = vscode.workspace.registerTaskProvider('Kha', KhaTaskProvider);
+	let provider = vscode.workspace.registerTaskProvider('Kinc', KincTaskProvider);
 	context.subscriptions.push(provider);
 
 	// TODO: Figure out why this prevents debugging
-	// let debugProvider = vscode.debug.registerDebugConfigurationProvider('electron', KhaDebugProvider);
+	// let debugProvider = vscode.debug.registerDebugConfigurationProvider('kinc', KincDebugProvider);
 	// context.subscriptions.push(debugProvider);
 
 	vscode.workspace.onDidChangeWorkspaceFolders((e) => {
@@ -372,9 +311,14 @@ exports.activate = (context) => {
 		}
 	});
 
-	let disposable = vscode.commands.registerCommand('kha.init', function () {
+	let disposable = vscode.commands.registerCommand('kinc.init', function () {
 		if (!vscode.workspace.rootPath) {
 			channel.appendLine('No project opened.');
+			return;
+		}
+
+		if (fs.existsSync(path.join(vscode.workspace.rootPath, 'kincfile.js'))) {
+			channel.appendLine('A Kinc project already exists in the project directory.');
 			return;
 		}
 
@@ -383,26 +327,26 @@ exports.activate = (context) => {
 			return;
 		}
 
-		require(path.join(findKha(), 'Tools', 'khamake', 'out', 'init.js')).run('Project', vscode.workspace.rootPath, 'khafile.js');
+		require(path.join(findKinc(), 'Tools', 'kincmake', 'out', 'init.js')).run('Project', vscode.workspace.rootPath, 'kincfile.js');
 		vscode.commands.executeCommand('workbench.action.reloadWindow');
-		vscode.window.showInformationMessage('Kha project created.');
+		vscode.window.showInformationMessage('Kinc project created.');
 	});
 
 	context.subscriptions.push(disposable);
 
-	disposable = vscode.commands.registerCommand('kha.findKha', () => {
-		return findKha();
+	disposable = vscode.commands.registerCommand('kinc.findKinc', () => {
+		return findKinc();
 	});
 
 	context.subscriptions.push(disposable);
 
-	disposable = vscode.commands.registerCommand('kha.findFFMPEG', () => {
+	disposable = vscode.commands.registerCommand('kinc.findFFMPEG', () => {
 		return findFFMPEG();
 	});
 
 	context.subscriptions.push(disposable);
 
-	const targetItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+	/*const targetItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 	targetItem.text = '$(desktop-download) HTML5';
 	targetItem.tooltip = 'Select Completion Target';
 	targetItem.command = 'kha.selectCompletionTarget';
@@ -466,10 +410,10 @@ exports.activate = (context) => {
 			}
 		});
 	});
-	context.subscriptions.push(disposable);
+	context.subscriptions.push(disposable);*/
 
 	let api = {
-		findKha: findKha,
+		findKinc: findKinc,
 		findFFMPEG: findFFMPEG,
 		compile: compile
 	};
