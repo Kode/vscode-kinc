@@ -25,14 +25,13 @@ function createOptions(target) {
 	return {
 		from: vscode.workspace.rootPath,
 		to: path.join(vscode.workspace.rootPath, vscode.workspace.getConfiguration('kinc').buildDir),
-		projectfile: 'kincfile.js',
+		kincfile: 'kincfile.js',
 		target: target,
 		vr: 'none',
 		pch: false,
 		intermediate: '',
 		graphics: 'default',
 		visualstudio: 'vs2019',
-		kha: '',
 		haxe: '',
 		ogg: '',
 		aac: '',
@@ -94,7 +93,7 @@ function compile(target, silent) {
 	});
 }
 
-let KhaDisplayArgumentsProvider = {
+let KincDisplayArgumentsProvider = {
 	init: (api, activationChangedCallback) => {
 		this.api = api;
 		this.activationChangedCallback = activationChangedCallback;
@@ -125,7 +124,7 @@ let KhaDisplayArgumentsProvider = {
 function updateHaxeArguments(rootPath, hxmlPath) {
 	const hxml = fs.readFileSync(hxmlPath, 'utf8');
 	const buildDir = vscode.workspace.getConfiguration('kinc').buildDir;
-	KhaDisplayArgumentsProvider.update('--cwd ' + path.join(rootPath, buildDir) + '\n' + hxml);
+	KincDisplayArgumentsProvider.update('--cwd ' + path.join(rootPath, buildDir) + '\n' + hxml);
 }
 
 function sys() {
@@ -166,9 +165,10 @@ function checkProject(rootPath) {
 
 	const options = createOptions('windows');
 	options.vscode = true;
+	options.noshaders = true;
 
-	require(path.join(findKinc(), 'Tools', 'kincmake', 'out', 'main.js'))
-	.run(options, {
+	const kinc = require(path.join(findKinc(), 'Tools', 'kincmake', 'out', 'main.js'))
+	kinc.run(options, {
 		info: message => {
 			channel.appendLine(message);
 		}, error: message => {
@@ -222,7 +222,7 @@ const KincTaskProvider = {
 			{ arg: 'html5', name: 'HTML5', default: false },
 			{ arg: 'ps4', name: 'PlayStation 4', default: false },
 			{ arg: 'xboxone', name: 'Xbox One', default: false },
-			{ arg: 'switch', name: 'Switch', default: false }
+			{ arg: 'switch', name: 'Switch', default: false },
 			{ arg: 'ps5', name: 'PlayStation 5', default: false },
 			{ arg: 'xboxscarlett', name: 'Xbox Series X|S', default: false },
 			{ arg: 'stadia', name: 'Stadia', default: false }
