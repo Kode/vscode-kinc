@@ -21,28 +21,8 @@ function findFFMPEG() {
 	return vscode.workspace.getConfiguration('kinc').ffmpeg;
 }
 
-function compile(target, silent) {
-	if (!silent) {
-		channel.appendLine('Saving all files.');
-		vscode.commands.executeCommand('workbench.action.files.saveAll');
-	}
-
-	if (!vscode.workspace.rootPath) {
-		channel.appendLine('No project opened.');
-		return;
-	}
-
-	if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'kincfile.js'))) {
-		channel.appendLine('No kincfile found.');
-		return;
-	}
-
-	if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'khafile.js'))) {
-		channel.appendLine('khafile found.');
-		return;
-	}
-
-	let options = {
+function createOptions(target) {
+	return {
 		from: vscode.workspace.rootPath,
 		to: path.join(vscode.workspace.rootPath, vscode.workspace.getConfiguration('kinc').buildDir),
 		projectfile: 'kincfile.js',
@@ -79,6 +59,31 @@ function compile(target, silent) {
 		parallelAssetConversion: 0,
 		haxe3: false
 	};
+}
+
+function compile(target, silent) {
+	if (!silent) {
+		channel.appendLine('Saving all files.');
+		vscode.commands.executeCommand('workbench.action.files.saveAll');
+	}
+
+	if (!vscode.workspace.rootPath) {
+		channel.appendLine('No project opened.');
+		return;
+	}
+
+	if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'kincfile.js'))) {
+		channel.appendLine('No kincfile found.');
+		return;
+	}
+
+	if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'khafile.js'))) {
+		channel.appendLine('khafile found.');
+		return;
+	}
+
+	let options = createOptions(target);
+
 	return require(path.join(findKinc(), 'Tools', 'kincmake', 'out', 'main.js'))
 	.run(options, {
 		info: message => {
@@ -158,6 +163,18 @@ function checkProject(rootPath) {
 	if (findKinc() === path.join(vscode.extensions.getExtension('kodetech.kinc').extensionPath, 'Kinc')) {
 		chmodEverything()
 	}
+
+	const options = createOptions('windows');
+	options.vscode = true;
+
+	require(path.join(findKinc(), 'Tools', 'kincmake', 'out', 'main.js'))
+	.run(options, {
+		info: message => {
+			channel.appendLine(message);
+		}, error: message => {
+			channel.appendLine(message);
+		}
+	});
 
 	const configuration = vscode.workspace.getConfiguration();
 	const buildDir = vscode.workspace.getConfiguration('kinc').buildDir;
