@@ -128,17 +128,30 @@ function updateHaxeArguments(rootPath, hxmlPath) {
 }
 
 function sys() {
-	if (os.platform() === 'linux') {
+	if (os.platform() === 'win32') {
+		return '.exe';
+	}
+	else if (os.platform() === 'darwin') {
+		return '-osx';
+	}
+	else {
 		if (os.arch() === 'arm') return '-linuxarm';
 		else if (os.arch() === 'x64') return '-linux64';
 		else return '-linux32';
 	}
-	else if (os.platform() === 'win32') {
-		return '.exe';
+}
+
+function currentPlatform() {
+	if (os.platform() === 'win32') {
+		return 'windows';
 	}
+	else if (os.platform() === 'darwin') {
+		return 'osx';
+	}	
 	else {
-		return '-osx';
+		return 'linux'
 	}
+	
 }
 
 function chmodEverything() {
@@ -163,7 +176,7 @@ function checkProject(rootPath) {
 		chmodEverything()
 	}
 
-	const options = createOptions('windows');
+	const options = createOptions(currentPlatform());
 	options.vscode = true;
 	options.noshaders = true;
 
