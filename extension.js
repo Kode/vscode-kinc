@@ -189,21 +189,20 @@ function checkProject(rootPath) {
 		}
 	});
 
+	const protoPath = path.join(rootPath, '.vscode', 'protolaunch.json');
+	let proto = null;
+	if (fs.existsSync(protoPath)) {
+		proto = JSON.parse(fs.readFileSync(protoPath, 'utf-8'));
+	}
+
 	const configuration = vscode.workspace.getConfiguration();
-	const buildDir = vscode.workspace.getConfiguration('kinc').buildDir;
 	let config = configuration.get('launch');
 	config.configurations = config.configurations.filter((value) => {
 		return !value.name.startsWith('Kinc: ');
 	});
-	config.configurations.push({
-		type: 'kinc',
-		request: 'launch',
-		name: 'Kinc: Launch',
-		appDir: '${workspaceFolder}/' + buildDir,
-		cwd: '${workspaceFolder}/' + buildDir,
-		preLaunchTask: 'Kinc: Build',
-		internalConsoleOptions: 'openOnSessionStart',
-	});
+	if (proto) {
+		config.configurations.push(proto);
+	}
 	configuration.update('launch', config, false);
 }
 
