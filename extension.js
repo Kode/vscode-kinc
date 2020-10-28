@@ -51,7 +51,7 @@ function createOptions(target) {
 		name: 'Project',
 		server: false,
 		port: 8080,
-		debug: false,
+		debug: true,
 		silent: false,
 		watch: false,
 		shaderversion: 0,
@@ -179,6 +179,7 @@ function checkProject(rootPath) {
 	const options = createOptions(currentPlatform());
 	options.vscode = true;
 	options.noshaders = true;
+	options.compile = false;
 
 	const kinc = require(path.join(findKinc(), 'Tools', 'kincmake', 'out', 'main.js'))
 	kinc.run(options, {

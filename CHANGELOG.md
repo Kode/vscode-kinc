@@ -1,3 +1,7 @@
+### 20.10.3
+
+Compile debug builds
+
 ### 20.10.2
 
 Add debugging support
