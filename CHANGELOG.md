@@ -1,3 +1,7 @@
+### 20.12.0
+
+Support korefile.js based projects
+
 ### 20.10.3
 
 Compile debug builds
