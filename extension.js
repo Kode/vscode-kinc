@@ -21,11 +21,11 @@ function findFFMPEG() {
 	return vscode.workspace.getConfiguration('kinc').ffmpeg;
 }
 
-function createOptions(target) {
+function createOptions(target, kincfile) {
 	return {
 		from: vscode.workspace.rootPath,
 		to: path.join(vscode.workspace.rootPath, vscode.workspace.getConfiguration('kinc').buildDir),
-		kincfile: 'kincfile.js',
+		kincfile: kincfile,
 		target: target,
 		vr: 'none',
 		pch: false,
@@ -71,8 +71,8 @@ function compile(target, silent) {
 		return;
 	}
 
-	if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'kincfile.js'))) {
-		channel.appendLine('No kincfile found.');
+	if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'kincfile.js')) && !fs.existsSync(path.join(vscode.workspace.rootPath, 'korefile.js'))) {
+		channel.appendLine('No kincfile and no korefile found.');
 		return;
 	}
 
@@ -81,7 +81,7 @@ function compile(target, silent) {
 		return;
 	}
 
-	let options = createOptions(target);
+	let options = createOptions(target, fs.existsSync(path.join(vscode.workspace.rootPath, 'kincfile.js')) ? 'kincfile.js' : 'korefile.js');
 
 	return require(path.join(findKinc(), 'Tools', 'kincmake', 'out', 'main.js'))
 	.run(options, {
@@ -164,7 +164,7 @@ function chmodEverything() {
 }
 
 function checkProject(rootPath) {
-	if (!fs.existsSync(path.join(rootPath, 'kincfile.js'))) {
+	if (!fs.existsSync(path.join(rootPath, 'kincfile.js')) && !fs.existsSync(path.join(rootPath, 'korefile.js'))) {
 		return;
 	}
 
@@ -176,7 +176,7 @@ function checkProject(rootPath) {
 		chmodEverything()
 	}
 
-	const options = createOptions(currentPlatform());
+	const options = createOptions(currentPlatform(), fs.existsSync(path.join(rootPath, 'kincfile.js')) ? 'kincfile.js' : 'korefile.js');
 	options.vscode = true;
 	options.noshaders = true;
 	options.compile = false;
@@ -348,6 +348,11 @@ exports.activate = (context) => {
 		}
 
 		if (fs.existsSync(path.join(vscode.workspace.rootPath, 'kincfile.js'))) {
+			channel.appendLine('A Kinc project already exists in the project directory.');
+			return;
+		}
+
+		if (fs.existsSync(path.join(vscode.workspace.rootPath, 'korefile.js'))) {
 			channel.appendLine('A Kinc project already exists in the project directory.');
 			return;
 		}
