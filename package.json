@@ -2,7 +2,7 @@
 	"name": "kinc",
 	"displayName": "Kinc",
 	"description": "Kinc support",
-	"version": "20.12.0",
+	"version": "20.12.1",
 	"publisher": "kodetech",
 	"engines": {
 		"vscode": "^1.31.0"
@@ -16,6 +16,7 @@
 	],
 	"activationEvents": [
 		"workspaceContains:kincfile.js",
+		"workspaceContains:korefile.js",
 		"onCommand:kinc.init",
 		"onCommand:kinc.compile"
 	],

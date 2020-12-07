@@ -1,3 +1,7 @@
+### 20.12.1
+
+Activate on korefile
+
 ### 20.12.0
 
 Support korefile.js based projects
