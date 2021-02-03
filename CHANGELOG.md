@@ -1,3 +1,8 @@
+### 21.2.0
+
+* Print a warning when fallback Kinc is used for compilation
+* Update Kinc
+
 ### 20.12.1
 
 Activate on korefile

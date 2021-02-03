@@ -7,12 +7,16 @@ const vscode = require('vscode');
 
 let channel = null;
 
-function findKinc() {
+function findKinc(channel) {
 	let localkincpath = path.resolve(vscode.workspace.rootPath, 'Kinc');
 	if (fs.existsSync(localkincpath) && fs.existsSync(path.join(localkincpath, 'Tools', 'kincmake', 'out', 'main.js'))) return localkincpath;
 	let kincpath = vscode.workspace.getConfiguration('kinc').kincPath;
 	if (kincpath.length > 0) {
 		return path.isAbsolute(kincpath) ? kincpath : path.resolve(vscode.workspace.rootPath, kincpath);
+	}
+
+	if (channel) {
+		channel.appendLine('Warning: Falling back to integrated Kinc. Consider downloading an up to date version and setting the kincPath option.');
 	}
 	return path.join(vscode.extensions.getExtension('kodetech.kinc').extensionPath, 'Kinc');
 }
@@ -83,7 +87,7 @@ function compile(target, silent) {
 
 	let options = createOptions(target, fs.existsSync(path.join(vscode.workspace.rootPath, 'kincfile.js')) ? 'kincfile.js' : 'korefile.js');
 
-	return require(path.join(findKinc(), 'Tools', 'kincmake', 'out', 'main.js'))
+	return require(path.join(findKinc(channel), 'Tools', 'kincmake', 'out', 'main.js'))
 	.run(options, {
 		info: message => {
 			channel.appendLine(message);
