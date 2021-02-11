@@ -235,7 +235,6 @@ const KincTaskProvider = {
 			{ arg: 'pi', name: 'Raspberry Pi', default: false },
 			{ arg: 'tvos', name: 'tvOS', default: false },
 			{ arg: 'tizen', name: 'Tizen', default: false },
-			{ arg: 'java', name: 'Java', default: false },
 			{ arg: 'html5', name: 'HTML5', default: false },
 			{ arg: 'ps4', name: 'PlayStation 4', default: false },
 			{ arg: 'xboxone', name: 'Xbox One', default: false },
