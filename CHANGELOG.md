@@ -1,3 +1,8 @@
+### 21.4.0
+
+* Create launch.json directly in kincmake
+* Update Kinc
+
 ### 21.2.0
 
 * Print a warning when fallback Kinc is used for compilation
