@@ -194,7 +194,7 @@ function checkProject(rootPath) {
 		}
 	});
 
-	const protoPath = path.join(rootPath, '.vscode', 'protolaunch.json');
+	/*const protoPath = path.join(rootPath, '.vscode', 'protolaunch.json');
 	let proto = null;
 	if (fs.existsSync(protoPath)) {
 		proto = JSON.parse(fs.readFileSync(protoPath, 'utf-8'));
@@ -208,7 +208,7 @@ function checkProject(rootPath) {
 	if (proto) {
 		config.configurations.push(proto);
 	}
-	configuration.update('launch', config, false);
+	configuration.update('launch', config, false);*/
 }
 
 const KincTaskProvider = {
