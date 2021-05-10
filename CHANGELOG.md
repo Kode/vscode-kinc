@@ -1,3 +1,7 @@
+### 21.5.0
+
+* Update Kinc to add support for Linux/ARM and FreeBSD
+
 ### 21.4.0
 
 * Create launch.json directly in kincmake
