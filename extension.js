@@ -151,11 +151,11 @@ function currentPlatform() {
 	}
 	else if (os.platform() === 'darwin') {
 		return 'osx';
-	}	
+	}
 	else {
 		return 'linux'
 	}
-	
+
 }
 
 function chmodEverything() {
@@ -219,75 +219,87 @@ const KincTaskProvider = {
 		}
 
 		const systems = [
-			{ arg: 'windows', name: 'Windows', default: false },
-			{ arg: 'windows', name: 'Windows (Direct3D 12)', default: false, graphics: 'direct3d12' },
-			{ arg: 'windows', name: 'Windows (Direct3D 9)', default: false, graphics: 'direct3d9' },
-			{ arg: 'windows', name: 'Windows (Vulkan)', default: false, graphics: 'vulkan' },
-			{ arg: 'windows', name: 'Windows (OpenGL)', default: false, graphics: 'opengl' },
-			{ arg: 'windowsapp', name: 'Windows Universal', default: false },
-			{ arg: 'osx', name: 'macOS', default: false },
-			{ arg: 'osx', name: 'macOS (OpenGL)', default: false, graphics: 'opengl' },
-			{ arg: 'linux', name: 'Linux', default: false },
-			{ arg: 'linux', name: 'Linux (Vulkan)', default: false, graphics: 'vulkan' },
-			{ arg: 'android', name: 'Android', default: false },
-			{ arg: 'ios', name: 'iOS', default: false },
-			{ arg: 'ios', name: 'iOS (OpenGL)', default: false, graphics: 'opengl' },
-			{ arg: 'pi', name: 'Raspberry Pi', default: false },
-			{ arg: 'tvos', name: 'tvOS', default: false },
-			{ arg: 'tizen', name: 'Tizen', default: false },
-			{ arg: 'html5', name: 'HTML5', default: false },
-			{ arg: 'ps4', name: 'PlayStation 4', default: false },
-			{ arg: 'xboxone', name: 'Xbox One', default: false },
-			{ arg: 'switch', name: 'Switch', default: false },
-			{ arg: 'ps5', name: 'PlayStation 5', default: false },
-			{ arg: 'xboxscarlett', name: 'Xbox Series X|S', default: false },
-			{ arg: 'stadia', name: 'Stadia', default: false }
+			{ arg: 'windows', name: 'Windows', default: false, withdebug: true },
+			{ arg: 'windows', name: 'Windows (Direct3D 12)', default: false, graphics: 'direct3d12' , withdebug: true},
+			{ arg: 'windows', name: 'Windows (Direct3D 9)', default: false, graphics: 'direct3d9' , withdebug: true},
+			{ arg: 'windows', name: 'Windows (Vulkan)', default: false, graphics: 'vulkan' , withdebug: true},
+			{ arg: 'windows', name: 'Windows (OpenGL)', default: false, graphics: 'opengl' , withdebug: true},
+			{ arg: 'windowsapp', name: 'Windows Universal', default: false , withdebug: true},
+			{ arg: 'osx', name: 'macOS', default: false , withdebug: true},
+			{ arg: 'osx', name: 'macOS (OpenGL)', default: false, graphics: 'opengl' , withdebug: true},
+			{ arg: 'linux', name: 'Linux', default: false , withdebug: true},
+			{ arg: 'linux', name: 'Linux (Vulkan)', default: false, graphics: 'vulkan' , withdebug: true},
+			{ arg: 'android', name: 'Android', default: false , withdebug: false},
+			{ arg: 'ios', name: 'iOS', default: false , withdebug: false},
+			{ arg: 'ios', name: 'iOS (OpenGL)', default: false, graphics: 'opengl' , withdebug: false},
+			{ arg: 'pi', name: 'Raspberry Pi', default: false , withdebug: false},
+			{ arg: 'tvos', name: 'tvOS', default: false , withdebug: false},
+			{ arg: 'tizen', name: 'Tizen', default: false , withdebug: false},
+			{ arg: 'html5', name: 'HTML5', default: false , withdebug: false},
+			{ arg: 'ps4', name: 'PlayStation 4', default: false , withdebug: false},
+			{ arg: 'xboxone', name: 'Xbox One', default: false , withdebug: false},
+			{ arg: 'switch', name: 'Switch', default: false , withdebug: false},
+			{ arg: 'ps5', name: 'PlayStation 5', default: false , withdebug: false},
+			{ arg: 'xboxscarlett', name: 'Xbox Series X|S', default: false , withdebug: false},
+			{ arg: 'stadia', name: 'Stadia', default: false , withdebug: false}
 		];
 
 		let tasks = [];
 		for (const system of systems) {
-			let args = [system.arg];
+			let debugflags = system.withdebug ? [false, true] : [false];
+			for (const debugflag of debugflags) {
+				let args = [system.arg];
 
-			if (findFFMPEG().length > 0) {
-				args.push('--ffmpeg');
-				args.push(findFFMPEG());
-			}
-
-			args.push('--compile');
-
-			if (system.graphics) {
-				args.push('--graphics');
-				args.push(system.graphics);
-			}
-
-			let kind = {
-				type: 'Kinc',
-				target: system.name,
-			}
-
-			let task = null;
-			let kincmakePath = path.join(findKinc(), 'make.js');
-
-			// On Windows, git bash shell won't accept backward slashes and will fail,
-			// so we explicitly need to convert path to unix-style.
-			const winShell = vscode.workspace.getConfiguration('terminal.integrated.shell').get('windows');
-			if (os.platform() === 'win32' && winShell && winShell.indexOf('bash.exe') > -1) {
-				kincmakePath = kincmakePath.replace(/\\/g, '/');
-			}
-
-			if (vscode.env.appName.includes('Kode')) {
-				let exec = process.execPath;
-				if (exec.indexOf('Kode Studio Helper') >= 0) {
-					const dir = exec.substring(0, exec.lastIndexOf('/'));
-					exec = path.join(dir, '..', '..', '..', '..', 'MacOS', 'Electron');
+				if (findFFMPEG().length > 0) {
+					args.push('--ffmpeg');
+					args.push(findFFMPEG());
 				}
-				task = new vscode.Task(kind, `Build for ${system.name}`, 'Kinc', new vscode.ProcessExecution(exec, ['--kincmake', kincmakePath].concat(args), {cwd: workspaceRoot}), ['$msCompile']);
+
+				args.push('--compile');
+				if (debugflag) {
+					args.push('--debug');
+				}
+
+				if (system.graphics) {
+					args.push('--graphics');
+					args.push(system.graphics);
+				}
+
+				let kind = {
+					type: 'Kinc',
+					target: system.name,
+				}
+
+				let prefix = '';
+				if (debugflag) {
+					kind.target += ' Debug';
+					prefix = 'Debug ';
+				}
+
+				let task = null;
+				let kincmakePath = path.join(findKinc(), 'make.js');
+
+				// On Windows, git bash shell won't accept backward slashes and will fail,
+				// so we explicitly need to convert path to unix-style.
+				const winShell = vscode.workspace.getConfiguration('terminal.integrated.shell').get('windows');
+				if (os.platform() === 'win32' && winShell && winShell.indexOf('bash.exe') > -1) {
+					kincmakePath = kincmakePath.replace(/\\/g, '/');
+				}
+
+				if (vscode.env.appName.includes('Kode')) {
+					let exec = process.execPath;
+					if (exec.indexOf('Kode Studio Helper') >= 0) {
+						const dir = exec.substring(0, exec.lastIndexOf('/'));
+						exec = path.join(dir, '..', '..', '..', '..', 'MacOS', 'Electron');
+					}
+					task = new vscode.Task(kind, `${prefix}Build for ${system.name}`, 'Kinc', new vscode.ProcessExecution(exec, ['--kincmake', kincmakePath].concat(args), {cwd: workspaceRoot}), ['$msCompile']);
+				}
+				else {
+					task = new vscode.Task(kind, vscode.TaskScope.Workspace, `${prefix}Build for ${system.name}`, 'Kinc', new vscode.ShellExecution('node', [kincmakePath].concat(args)), ['$msCompile']);
+				}
+				task.group = vscode.TaskGroup.Build;
+				tasks.push(task);
 			}
-			else {
-				task = new vscode.Task(kind, vscode.TaskScope.Workspace, `Build for ${system.name}`, 'Kinc', new vscode.ShellExecution('node', [kincmakePath].concat(args)), ['$msCompile']);
-			}
-			task.group = vscode.TaskGroup.Build;
-			tasks.push(task);
 		}
 
 		return tasks;
