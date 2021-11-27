@@ -1,3 +1,8 @@
+### 21.11.0
+
+* Use debug builds for desktop targets
+* Update Kinc
+
 ### 21.5.0
 
 * Update Kinc to add support for Linux/ARM and FreeBSD
