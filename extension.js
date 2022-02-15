@@ -1,5 +1,6 @@
 'use strict';
 
+const child_process = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -9,7 +10,7 @@ let channel = null;
 
 function findKinc(channel) {
 	let localkincpath = path.resolve(vscode.workspace.rootPath, 'Kinc');
-	if (fs.existsSync(localkincpath) && fs.existsSync(path.join(localkincpath, 'Tools', 'kincmake', 'out', 'main.js'))) return localkincpath;
+	if (fs.existsSync(localkincpath) && fs.existsSync(path.join(localkincpath, 'Tools', 'kmake', 'kmake'))) return localkincpath;
 	let kincpath = vscode.workspace.getConfiguration('kinc').kincPath;
 	if (kincpath.length > 0) {
 		return path.isAbsolute(kincpath) ? kincpath : path.resolve(vscode.workspace.rootPath, kincpath);
@@ -21,79 +22,92 @@ function findKinc(channel) {
 	return path.join(vscode.extensions.getExtension('kodetech.kinc').extensionPath, 'Kinc');
 }
 
+function sys() {
+	if (os.platform() === 'linux') {
+		if (os.arch() === 'arm') return '-linuxarm';
+		else if (os.arch() === 'arm64') return '-linuxaarch64';
+		else if (os.arch() === 'x64') return '-linux64';
+		else return '-linux32';
+	}
+	else if (os.platform() === 'win32') {
+		return '.exe';
+	}
+	else if (os.platform() === 'freebsd') {
+		return '-freebsd';
+	}
+	else {
+		return '-osx';
+	}
+}
+
+function findKmake(channel) {
+	return path.join(findKinc(channel), 'Tools', 'kmake', 'kmake' + sys());
+}
+
 function findFFMPEG() {
 	return vscode.workspace.getConfiguration('kinc').ffmpeg;
 }
 
-function createOptions(target, kincfile) {
-	return {
-		from: vscode.workspace.rootPath,
-		to: path.join(vscode.workspace.rootPath, vscode.workspace.getConfiguration('kinc').buildDir),
-		kincfile: kincfile,
-		target: target,
-		vr: 'none',
-		pch: false,
-		intermediate: '',
-		graphics: 'default',
-		visualstudio: 'vs2019',
-		haxe: '',
-		ogg: '',
-		aac: '',
-		mp3: '',
-		h264: '',
-		webm: '',
-		wmv: '',
-		theora: '',
-		kfx: '',
-		krafix: '',
-		ffmpeg: findFFMPEG(),
-		nokrafix: false,
-		embedflashassets: false,
-		compile: true,
-		run: false,
-		init: false,
-		name: 'Project',
-		server: false,
-		port: 8080,
-		debug: true,
-		silent: false,
-		watch: false,
-		shaderversion: 0,
-		parallelAssetConversion: 0,
-		haxe3: false
-	};
+function createOptions(target, compile) {
+	const options = [
+		'--from', vscode.workspace.rootPath,
+		'--to', path.join(vscode.workspace.rootPath, vscode.workspace.getConfiguration('kinc').buildDir),
+		'-t', target,
+		'--ffmpeg', findFFMPEG()
+	];
+	if (compile) {
+		options.push('--compile');
+	}
+	return options;
 }
 
 function compile(target, silent) {
-	if (!silent) {
-		channel.appendLine('Saving all files.');
-		vscode.commands.executeCommand('workbench.action.files.saveAll');
-	}
-
-	if (!vscode.workspace.rootPath) {
-		channel.appendLine('No project opened.');
-		return;
-	}
-
-	if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'kincfile.js')) && !fs.existsSync(path.join(vscode.workspace.rootPath, 'korefile.js'))) {
-		channel.appendLine('No kincfile and no korefile found.');
-		return;
-	}
-
-	if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'khafile.js'))) {
-		channel.appendLine('khafile found.');
-		return;
-	}
-
-	let options = createOptions(target, fs.existsSync(path.join(vscode.workspace.rootPath, 'kincfile.js')) ? 'kincfile.js' : 'korefile.js');
-
-	return require(path.join(findKinc(channel), 'Tools', 'kincmake', 'out', 'main.js'))
-	.run(options, {
-		info: message => {
-			channel.appendLine(message);
-		}, error: message => {
-			channel.appendLine(message);
+	return new Promise((resolve, reject) => {
+		if (!silent) {
+			channel.appendLine('Saving all files.');
+			vscode.commands.executeCommand('workbench.action.files.saveAll');
 		}
+	
+		if (!vscode.workspace.rootPath) {
+			channel.appendLine('No project opened.');
+			reject();
+			return;
+		}
+	
+		if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'kfile.js'))) {
+			channel.appendLine('No kfile found.');
+			reject();
+			return;
+		}
+	
+		if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'khafile.js'))) {
+			channel.appendLine('khafile found.');
+			reject();
+			return;
+		}
+	
+		const child = child_process.spawn(findKmake(channel), createOptions(target, true));
+	
+		child.stdout.on('data', (data) => {
+			channel.appendLine(data);
+		});
+	
+		child.stderr.on('data', (data) => {
+			channel.appendLine(data);
+		});
+	
+		child.on('error', (err) => {
+			channel.appendLine('Could not start kmake to compile the project.');
+		});
+	
+		child.on('close', (code) => {
+			if (code === 0) {
+				resolve();
+			}
+			else {
+				reject();
+			}
+		});
 	});
 }
 
@@ -165,10 +179,11 @@ function chmodEverything() {
 	const base = findKinc();
 	fs.chmodSync(path.join(base, 'Tools', 'kraffiti', 'kraffiti' + sys()), 0o755);
 	fs.chmodSync(path.join(base, 'Tools', 'krafix', 'krafix' + sys()), 0o755);
+	fs.chmodSync(path.join(base, 'Tools', 'kmake', 'kmake' + sys()), 0o755);
 }
 
 function checkProject(rootPath) {
-	if (!fs.existsSync(path.join(rootPath, 'kincfile.js')) && !fs.existsSync(path.join(rootPath, 'korefile.js'))) {
+	if (!fs.existsSync(path.join(rootPath, 'kfile.js'))) {
 		return;
 	}
 
@@ -180,19 +195,10 @@ function checkProject(rootPath) {
 		chmodEverything()
 	}
 
-	const options = createOptions(currentPlatform(), fs.existsSync(path.join(rootPath, 'kincfile.js')) ? 'kincfile.js' : 'korefile.js');
-	options.vscode = true;
-	options.noshaders = true;
-	options.compile = false;
-
-	const kinc = require(path.join(findKinc(), 'Tools', 'kincmake', 'out', 'main.js'))
-	kinc.run(options, {
-		info: message => {
-			channel.appendLine(message);
-		}, error: message => {
-			channel.appendLine(message);
-		}
-	});
+	const options = createOptions(currentPlatform(), false);
+	options.push('--vscode');
+	options.push('--noshaders');
+	child_process.spawnSync(findKmake(channel), options);
 
 	/*const protoPath = path.join(rootPath, '.vscode', 'protolaunch.json');
 	let proto = null;
@@ -277,26 +283,16 @@ const KincTaskProvider = {
 				}
 
 				let task = null;
-				let kincmakePath = path.join(findKinc(), 'make.js');
+				let kmakePath = findKmake();
 
 				// On Windows, git bash shell won't accept backward slashes and will fail,
 				// so we explicitly need to convert path to unix-style.
 				const winShell = vscode.workspace.getConfiguration('terminal.integrated.shell').get('windows');
 				if (os.platform() === 'win32' && winShell && winShell.indexOf('bash.exe') > -1) {
-					kincmakePath = kincmakePath.replace(/\\/g, '/');
+					kmakePath = kmakePath.replace(/\\/g, '/');
 				}
 
-				if (vscode.env.appName.includes('Kode')) {
-					let exec = process.execPath;
-					if (exec.indexOf('Kode Studio Helper') >= 0) {
-						const dir = exec.substring(0, exec.lastIndexOf('/'));
-						exec = path.join(dir, '..', '..', '..', '..', 'MacOS', 'Electron');
-					}
-					task = new vscode.Task(kind, `${prefix}Build for ${system.name}`, 'Kinc', new vscode.ProcessExecution(exec, ['--kincmake', kincmakePath].concat(args), {cwd: workspaceRoot}), ['$msCompile']);
-				}
-				else {
-					task = new vscode.Task(kind, vscode.TaskScope.Workspace, `${prefix}Build for ${system.name}`, 'Kinc', new vscode.ShellExecution('node', [kincmakePath].concat(args)), ['$msCompile']);
-				}
+				task = new vscode.Task(kind, vscode.TaskScope.Workspace, `${prefix}Build for ${system.name}`, 'Kinc', new vscode.ShellExecution(kmakePath, args), ['$msCompile']);
 				task.group = vscode.TaskGroup.Build;
 				tasks.push(task);
 			}
@@ -362,12 +358,9 @@ exports.activate = (context) => {
 			return;
 		}
 
-		if (fs.existsSync(path.join(vscode.workspace.rootPath, 'kincfile.js'))) {
-			channel.appendLine('A Kinc project already exists in the project directory.');
-			return;
-		}
-
-		if (fs.existsSync(path.join(vscode.workspace.rootPath, 'korefile.js'))) {
+		if (fs.existsSync(path.join(vscode.workspace.rootPath, 'kfile.js'))
+		|| fs.existsSync(path.join(vscode.workspace.rootPath, 'kincfile.js'))
+		|| fs.existsSync(path.join(vscode.workspace.rootPath, 'korefile.js'))) {
 			channel.appendLine('A Kinc project already exists in the project directory.');
 			return;
 		}
@@ -377,9 +370,21 @@ exports.activate = (context) => {
 			return;
 		}
 
-		require(path.join(findKinc(), 'Tools', 'kincmake', 'out', 'init.js')).run('Project', vscode.workspace.rootPath, 'kincfile.js');
-		vscode.commands.executeCommand('workbench.action.reloadWindow');
-		vscode.window.showInformationMessage('Kinc project created.');
+		const child = child_process.spawn(findKmake(channel), ['--init', '--name', 'Project', '--from', vscode.workspace.rootPath]);
+
+		child.on('error', (err) => {
+			channel.appendLine('Could not start kmake to initialize a new project.');
+		});
+
+		child.on('close', (code) => {
+			if (code === 0) {
+				vscode.commands.executeCommand('workbench.action.reloadWindow');
+				vscode.window.showInformationMessage('Kinc project created.');
+			}
+			else {
+				channel.appendLine('kmake --init returned an error.');
+			}
+		});
 	});
 
 	context.subscriptions.push(disposable);
