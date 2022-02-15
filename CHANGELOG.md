@@ -1,3 +1,8 @@
+### 22.1.0
+
+* Switch things over to kmake
+* Update Kinc
+
 ### 21.11.0
 
 * Use debug builds for desktop targets
