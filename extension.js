@@ -52,9 +52,12 @@ function createOptions(target, compile) {
 	const options = [
 		'--from', vscode.workspace.rootPath,
 		'--to', path.join(vscode.workspace.rootPath, vscode.workspace.getConfiguration('kinc').buildDir),
-		'-t', target,
-		'--ffmpeg', findFFMPEG()
+		'-t', target
 	];
+	if (findFFMPEG()) {
+		options.push('--ffmpeg');
+		options.push(findFFMPEG());
+	};
 	if (compile) {
 		options.push('--compile');
 	}
