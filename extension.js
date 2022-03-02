@@ -99,7 +99,7 @@ function compile(target, silent) {
 			channel.appendLine(data);
 		});
 	
-		child.on('error', (err) => {
+		child.on('error', () => {
 			channel.appendLine('Could not start kmake to compile the project.');
 		});
 	
@@ -355,7 +355,7 @@ exports.activate = (context) => {
 
 		const child = child_process.spawn(findKmake(channel), ['--init', '--name', 'Project', '--from', vscode.workspace.rootPath]);
 
-		child.on('error', (err) => {
+		child.on('error', () => {
 			channel.appendLine('Could not start kmake to initialize a new project.');
 		});
 
