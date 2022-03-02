@@ -142,12 +142,6 @@ let KincDisplayArgumentsProvider = {
 	}
 }
 
-function updateHaxeArguments(rootPath, hxmlPath) {
-	const hxml = fs.readFileSync(hxmlPath, 'utf8');
-	const buildDir = vscode.workspace.getConfiguration('kinc').buildDir;
-	KincDisplayArgumentsProvider.update('--cwd ' + path.join(rootPath, buildDir) + '\n' + hxml);
-}
-
 function currentPlatform() {
 	if (os.platform() === 'win32') {
 		return 'windows';
