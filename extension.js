@@ -70,39 +70,39 @@ function compile(target, silent) {
 			channel.appendLine('Saving all files.');
 			vscode.commands.executeCommand('workbench.action.files.saveAll');
 		}
-	
+
 		if (!vscode.workspace.rootPath) {
 			channel.appendLine('No project opened.');
 			reject();
 			return;
 		}
-	
+
 		if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'kfile.js'))) {
 			channel.appendLine('No kfile found.');
 			reject();
 			return;
 		}
-	
+
 		if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'khafile.js'))) {
 			channel.appendLine('khafile found.');
 			reject();
 			return;
 		}
-	
+
 		const child = child_process.spawn(findKmake(channel), createOptions(target, true));
-	
+
 		child.stdout.on('data', (data) => {
 			channel.appendLine(data);
 		});
-	
+
 		child.stderr.on('data', (data) => {
 			channel.appendLine(data);
 		});
-	
+
 		child.on('error', (err) => {
 			channel.appendLine('Could not start kmake to compile the project.');
 		});
-	
+
 		child.on('close', (code) => {
 			if (code === 0) {
 				resolve();
@@ -157,6 +157,7 @@ function sys() {
 	}
 	else {
 		if (os.arch() === 'arm') return '-linuxarm';
+		else if (os.arch() === 'arm64') return '-linuxaarch64';
 		else if (os.arch() === 'x64') return '-linux64';
 		else return '-linux32';
 	}
