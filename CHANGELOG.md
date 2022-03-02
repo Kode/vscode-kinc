@@ -1,3 +1,8 @@
+### 22.3.0
+
+* Fix arm64-support
+* Update Kinc
+
 ### 22.1.0
 
 * Switch things over to kmake
