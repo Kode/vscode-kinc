@@ -148,20 +148,6 @@ function updateHaxeArguments(rootPath, hxmlPath) {
 	KincDisplayArgumentsProvider.update('--cwd ' + path.join(rootPath, buildDir) + '\n' + hxml);
 }
 
-function sys() {
-	if (os.platform() === 'win32') {
-		return '.exe';
-	}
-	else if (os.platform() === 'darwin') {
-		return '-osx';
-	}
-	else {
-		if (os.arch() === 'arm') return '-linuxarm';
-		else if (os.arch() === 'x64') return '-linux64';
-		else return '-linux32';
-	}
-}
-
 function currentPlatform() {
 	if (os.platform() === 'win32') {
 		return 'windows';
