@@ -114,7 +114,7 @@ function compile(target, silent) {
 	});
 }
 
-let KincDisplayArgumentsProvider = {
+/*let KincDisplayArgumentsProvider = {
 	init: (api, activationChangedCallback) => {
 		this.api = api;
 		this.activationChangedCallback = activationChangedCallback;
@@ -140,7 +140,7 @@ let KincDisplayArgumentsProvider = {
 			}
 		}
 	}
-}
+}*/
 
 function currentPlatform() {
 	if (os.platform() === 'win32') {
@@ -283,12 +283,12 @@ const KincTaskProvider = {
 
 		return tasks;
 	},
-	resolveTask: (task, token) => {
+	resolveTask: (task/*, token*/) => {
 		return task;
 	}
 }
 
-const KincDebugProvider = {
+/*const KincDebugProvider = {
 	provideDebugConfigurations: (folder) => {
 		let configs = [];
 
@@ -309,7 +309,7 @@ const KincDebugProvider = {
 	resolveDebugConfiguration: (folder, debugConfiguration) => {
 		return undefined;
 	}
-}
+}*/
 
 //let currentTarget = 'HTML5';
 
