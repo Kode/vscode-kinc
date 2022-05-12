@@ -1,3 +1,8 @@
+### 22.5.0
+
+* Fix file-detection for new Kinc-revisions
+* Update Kinc
+
 ### 22.3.0
 
 * Fix arm64-support
