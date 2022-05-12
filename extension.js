@@ -8,20 +8,6 @@ const vscode = require('vscode');
 
 let channel = null;
 
-function findKinc(channel) {
-	let localkincpath = path.resolve(vscode.workspace.rootPath, 'Kinc');
-	if (fs.existsSync(localkincpath) && fs.existsSync(path.join(localkincpath, 'Tools', 'kmake', 'kmake'))) return localkincpath;
-	let kincpath = vscode.workspace.getConfiguration('kinc').kincPath;
-	if (kincpath.length > 0) {
-		return path.isAbsolute(kincpath) ? kincpath : path.resolve(vscode.workspace.rootPath, kincpath);
-	}
-
-	if (channel) {
-		channel.appendLine('Warning: Falling back to integrated Kinc. Consider downloading an up to date version and setting the kincPath option.');
-	}
-	return path.join(vscode.extensions.getExtension('kodetech.kinc').extensionPath, 'Kinc');
-}
-
 function sys() {
 	if (os.platform() === 'linux') {
 		if (os.arch() === 'arm') return '-linuxarm';
@@ -40,8 +26,55 @@ function sys() {
 	}
 }
 
+function sys2() {
+	if (os.platform() === 'win32') {
+		return '.exe';
+	}
+	else {
+		return '';
+	}
+}
+
+function sysdir() {
+	if (os.platform() === 'linux') {
+		if (os.arch() === 'arm') return 'linux_arm';
+		if (os.arch() === 'arm64') return 'linux_arm64';
+		else if (os.arch() === 'x64') return 'linux_x64';
+		else throw 'Unsupported CPU';
+	}
+	else if (os.platform() === 'win32') {
+		return 'windows_x64';
+	}
+	else if (os.platform() === 'freebsd') {
+		return 'freebsd_x64';
+	}
+	else {
+		return 'macos';
+	}
+}
+
+function findKinc(channel) {
+	let localkincpath = path.resolve(vscode.workspace.rootPath, 'Kinc');
+	if (fs.existsSync(localkincpath) && (fs.existsSync(path.join(localkincpath, 'Tools', sysdir(), 'kmake' + sys2())) || fs.existsSync(path.join(localkincpath, 'Tools', 'kmake', 'kmake')))) return localkincpath;
+	let kincpath = vscode.workspace.getConfiguration('kinc').kincPath;
+	if (kincpath.length > 0) {
+		return path.isAbsolute(kincpath) ? kincpath : path.resolve(vscode.workspace.rootPath, kincpath);
+	}
+
+	if (channel) {
+		channel.appendLine('Warning: Falling back to integrated Kinc. Consider downloading an up to date version and setting the kincPath option.');
+	}
+	return path.join(vscode.extensions.getExtension('kodetech.kinc').extensionPath, 'Kinc');
+}
+
 function findKmake(channel) {
-	return path.join(findKinc(channel), 'Tools', 'kmake', 'kmake' + sys());
+	const kmakePath = path.join(findKinc(channel), 'Tools', sysdir(), 'kmake' + sys2());
+	if (fs.existsSync(kmakePath)) {
+		return kmakePath;
+	}
+	else {
+		return path.join(findKinc(channel), 'Tools', 'kmake', 'kmake' + sys());
+	}
 }
 
 function findFFMPEG() {
@@ -160,9 +193,9 @@ function chmodEverything() {
 		return;
 	}
 	const base = findKinc();
-	fs.chmodSync(path.join(base, 'Tools', 'kraffiti', 'kraffiti' + sys()), 0o755);
-	fs.chmodSync(path.join(base, 'Tools', 'krafix', 'krafix' + sys()), 0o755);
-	fs.chmodSync(path.join(base, 'Tools', 'kmake', 'kmake' + sys()), 0o755);
+	fs.chmodSync(path.join(base, 'Tools', sysdir(), 'kraffiti'), 0o755);
+	fs.chmodSync(path.join(base, 'Tools', sysdir(), 'krafix'), 0o755);
+	fs.chmodSync(path.join(base, 'Tools', sysdir(), 'kmake'), 0o755);
 }
 
 function checkProject(rootPath) {
