@@ -110,13 +110,13 @@ function compile(target, silent) {
 			return;
 		}
 	
-		if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'kfile.js'))) {
+		if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'kfile.js')) && !fs.existsSync(path.join(vscode.workspace.rootPath, 'kincfile.js')) && !fs.existsSync(path.join(vscode.workspace.rootPath, 'korefile.js'))) {
 			channel.appendLine('No kfile found.');
 			reject();
 			return;
 		}
 	
-		if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'khafile.js'))) {
+		if (fs.existsSync(path.join(vscode.workspace.rootPath, 'khafile.js'))) {
 			channel.appendLine('khafile found.');
 			reject();
 			return;
@@ -346,8 +346,132 @@ const KincTaskProvider = {
 
 //let currentTarget = 'HTML5';
 
+async function directoryExists(filePath) {
+    return new Promise((resolve, reject) => {
+        fs.stat(filePath, (err, stats) => {
+            if (stats && stats.isDirectory()) {
+                resolve(true);
+            }
+			else {
+                resolve(false);
+            }
+        });
+    });
+}
+
+function getExtensionPath() {
+	return vscode.extensions.getExtension('kodetech.kinc').extensionPath;
+}
+
+function resolveDownloadPath(filename) {
+	let basePath = getExtensionPath();
+    basePath = path.resolve(basePath, filename);
+    return basePath;
+}
+
+let kincDownloaded = false;
+
+async function checkKinc() {
+	const downloadPath = resolveDownloadPath('Kinc');
+	if (await directoryExists(downloadPath)) {
+		kincDownloaded = true;
+		return;
+	}
+
+	return new Promise((resolve, reject) => {
+		vscode.window.showInformationMessage('Downloading Kinc...');
+		let message = vscode.window.setStatusBarMessage('Downloading Kinc...');
+
+		const process = child_process.spawn('git', ['clone', 'https://github.com/Kode/Kinc.git', downloadPath]);
+
+		let error = null;
+
+		process.on('error', (err) => {
+			error = err;
+		})
+
+		process.on('close', (code) => {
+			if (code === 0) {
+				child_process.exec(path.join(downloadPath, (os.platform() === 'win32') ? 'get_dlc.bat' : 'get_dlc'), (err) => {
+					message.dispose();
+
+					if (err) {
+						vscode.window.showInformationMessage('Could not download Kinc because ' + error);
+					}
+					else {
+						kincDownloaded = true;
+						vscode.window.showInformationMessage('Finished downloading Kinc.');
+					}
+
+					resolve();
+				});				
+			}
+			else {
+				message.dispose();
+				if (error) {
+					vscode.window.showInformationMessage('Could not download Kinc because ' + error);
+				}
+				else {
+					vscode.window.showInformationMessage('Could not download Kinc, git returned ' + code + '.');
+				}
+				resolve();
+			}
+		});
+	});
+}
+
+async function updateKinc() {
+	const downloadPath = resolveDownloadPath('Kinc');
+	if (!kincDownloaded) {
+		vscode.window.showInformationMessage('Could not update Kinc because it was not yet downloaded');
+		return;
+	}
+
+	return new Promise((resolve, reject) => {
+		vscode.window.showInformationMessage('Updating Kinc...');
+		let message = vscode.window.setStatusBarMessage('Updating Kinc...');
+
+		const process = child_process.spawn('git', ['-C', downloadPath, 'pull', 'origin', 'main']);
+
+		let error = null;
+
+		process.on('error', (err) => {
+			error = err;
+		})
+
+		process.on('close', (code) => {
+			if (code === 0) {
+				child_process.exec(path.join(downloadPath, (os.platform() === 'win32') ? 'get_dlc.bat' : 'get_dlc'), (err) => {
+					message.dispose();
+
+					if (err) {
+						vscode.window.showInformationMessage('Could not update Kinc because ' + error);
+					}
+					else {
+						vscode.window.showInformationMessage('Finished updating Kinc.');
+					}
+
+					resolve();
+				});				
+			}
+			else {
+				message.dispose();
+				if (error) {
+					vscode.window.showInformationMessage('Could not update Kinc because ' + error);
+				}
+				else {
+					vscode.window.showInformationMessage('Could not update Kinc, git returned ' + code + '.');
+				}
+				resolve();
+			}
+		});
+	});
+}
+
 exports.activate = (context) => {
 	channel = vscode.window.createOutputChannel('Kinc');
+
+	checkKinc();
 
 	if (vscode.workspace.rootPath) {
 		checkProject(vscode.workspace.rootPath);
@@ -413,6 +537,12 @@ exports.activate = (context) => {
 
 	disposable = vscode.commands.registerCommand('kinc.findFFMPEG', () => {
 		return findFFMPEG();
+	});
+
+	context.subscriptions.push(disposable);
+
+	disposable = vscode.commands.registerCommand('kinc.updateKinc', () => {
+		updateKinc();
 	});
 
 	context.subscriptions.push(disposable);
@@ -486,7 +616,8 @@ exports.activate = (context) => {
 	let api = {
 		findKinc: findKinc,
 		findFFMPEG: findFFMPEG,
-		compile: compile
+		compile: compile,
+		updateKinc: updateKinc
 	};
 
 	return api;

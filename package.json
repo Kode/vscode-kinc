@@ -2,7 +2,7 @@
 	"name": "kinc",
 	"displayName": "Kinc",
 	"description": "Kinc support",
-	"version": "22.5.0",
+	"version": "22.5.1",
 	"publisher": "kodetech",
 	"engines": {
 		"vscode": "^1.64.0"
@@ -27,6 +27,11 @@
 			{
 				"command": "kinc.init",
 				"title": "Init Project",
+				"category": "Kinc"
+			},
+			{
+				"command": "kinc.updateKinc",
+				"title": "Update extension-internal Kinc",
 				"category": "Kinc"
 			}
 		],

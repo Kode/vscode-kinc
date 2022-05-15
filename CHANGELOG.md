@@ -1,3 +1,7 @@
+### 22.5.1
+
+* Download Kinc instead of bundling it
+
 ### 22.5.0
 
 * Fix file-detection for new Kinc-revisions
