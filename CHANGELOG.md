@@ -1,3 +1,7 @@
+### 22.5.2
+
+* Only download Kinc when it's actually needed
+
 ### 22.5.1
 
 * Download Kinc instead of bundling it
