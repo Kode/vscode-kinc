@@ -53,18 +53,26 @@ function sysdir() {
 	}
 }
 
+function getExtensionPath() {
+	return vscode.extensions.getExtension('kodetech.kinc').extensionPath;
+}
+
 function findKinc(channel) {
 	let localkincpath = path.resolve(vscode.workspace.rootPath, 'Kinc');
-	if (fs.existsSync(localkincpath) && (fs.existsSync(path.join(localkincpath, 'Tools', sysdir(), 'kmake' + sys2())) || fs.existsSync(path.join(localkincpath, 'Tools', 'kmake', 'kmake')))) return localkincpath;
+	if (fs.existsSync(localkincpath) && (fs.existsSync(path.join(localkincpath, 'Tools', sysdir(), 'kmake' + sys2())) || fs.existsSync(path.join(localkincpath, 'Tools', 'kmake', 'kmake')))) {
+		return localkincpath;
+	}
+
 	let kincpath = vscode.workspace.getConfiguration('kinc').kincPath;
 	if (kincpath.length > 0) {
 		return path.isAbsolute(kincpath) ? kincpath : path.resolve(vscode.workspace.rootPath, kincpath);
 	}
 
-	if (channel) {
-		channel.appendLine('Warning: Falling back to integrated Kinc. Consider downloading an up to date version and setting the kincPath option.');
-	}
-	return path.join(vscode.extensions.getExtension('kodetech.kinc').extensionPath, 'Kinc');
+	return path.join(getExtensionPath(), 'Kinc');
+}
+
+function isUsingInternalKinc() {
+	return findKinc() === path.join(getExtensionPath(), 'Kinc');
 }
 
 function findKmake(channel) {
@@ -207,7 +215,7 @@ function checkProject(rootPath) {
 		return;
 	}
 
-	if (findKinc() === path.join(vscode.extensions.getExtension('kodetech.kinc').extensionPath, 'Kinc')) {
+	if (isUsingInternalKinc()) {
 		chmodEverything()
 	}
 
@@ -359,10 +367,6 @@ async function directoryExists(filePath) {
     });
 }
 
-function getExtensionPath() {
-	return vscode.extensions.getExtension('kodetech.kinc').extensionPath;
-}
-
 function resolveDownloadPath(filename) {
 	let basePath = getExtensionPath();
     basePath = path.resolve(basePath, filename);
@@ -372,6 +376,10 @@ function resolveDownloadPath(filename) {
 let kincDownloaded = false;
 
 async function checkKinc() {
+	if (!isUsingInternalKinc()) {
+		return;
+	}
+
 	const downloadPath = resolveDownloadPath('Kinc');
 	if (await directoryExists(downloadPath)) {
 		kincDownloaded = true;
