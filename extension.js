@@ -57,7 +57,7 @@ function getExtensionPath() {
 	return vscode.extensions.getExtension('kodetech.kinc').extensionPath;
 }
 
-function findKinc(channel) {
+async function findKinc(channel) {
 	let localkincpath = path.resolve(vscode.workspace.rootPath, 'Kinc');
 	if (fs.existsSync(localkincpath) && (fs.existsSync(path.join(localkincpath, 'Tools', sysdir(), 'kmake' + sys2())) || fs.existsSync(path.join(localkincpath, 'Tools', 'kmake', 'kmake')))) {
 		return localkincpath;
@@ -71,17 +71,17 @@ function findKinc(channel) {
 	return path.join(getExtensionPath(), 'Kinc');
 }
 
-function isUsingInternalKinc() {
-	return findKinc() === path.join(getExtensionPath(), 'Kinc');
+async function isUsingInternalKinc() {
+	return await findKinc() === path.join(getExtensionPath(), 'Kinc');
 }
 
-function findKmake(channel) {
-	const kmakePath = path.join(findKinc(channel), 'Tools', sysdir(), 'kmake' + sys2());
+async function findKmake(channel) {
+	const kmakePath = path.join(await findKinc(channel), 'Tools', sysdir(), 'kmake' + sys2());
 	if (fs.existsSync(kmakePath)) {
 		return kmakePath;
 	}
 	else {
-		return path.join(findKinc(channel), 'Tools', 'kmake', 'kmake' + sys());
+		return path.join(await findKinc(channel), 'Tools', 'kmake', 'kmake' + sys());
 	}
 }
 
@@ -106,7 +106,7 @@ function createOptions(target, compile) {
 }
 
 function compile(target, silent) {
-	return new Promise((resolve, reject) => {
+	return new Promise(async (resolve, reject) => {
 		if (!silent) {
 			channel.appendLine('Saving all files.');
 			vscode.commands.executeCommand('workbench.action.files.saveAll');
@@ -130,7 +130,7 @@ function compile(target, silent) {
 			return;
 		}
 	
-		const child = child_process.spawn(findKmake(channel), createOptions(target, true));
+		const child = child_process.spawn(await findKmake(channel), createOptions(target, true));
 	
 		child.stdout.on('data', (data) => {
 			channel.appendLine(data);
@@ -196,17 +196,17 @@ function currentPlatform() {
 
 }
 
-function chmodEverything() {
+async function chmodEverything() {
 	if (os.platform() === 'win32') {
 		return;
 	}
-	const base = findKinc();
+	const base = await findKinc();
 	fs.chmodSync(path.join(base, 'Tools', sysdir(), 'kraffiti'), 0o755);
 	fs.chmodSync(path.join(base, 'Tools', sysdir(), 'krafix'), 0o755);
 	fs.chmodSync(path.join(base, 'Tools', sysdir(), 'kmake'), 0o755);
 }
 
-function checkProject(rootPath) {
+async function checkProject(rootPath) {
 	if (!fs.existsSync(path.join(rootPath, 'kfile.js'))) {
 		return;
 	}
@@ -215,14 +215,14 @@ function checkProject(rootPath) {
 		return;
 	}
 
-	if (isUsingInternalKinc()) {
+	if (await isUsingInternalKinc()) {
 		chmodEverything()
 	}
 
 	const options = createOptions(currentPlatform(), false);
 	options.push('--vscode');
 	options.push('--noshaders');
-	child_process.spawnSync(findKmake(channel), options);
+	child_process.spawnSync(await findKmake(channel), options);
 
 	/*const protoPath = path.join(rootPath, '.vscode', 'protolaunch.json');
 	let proto = null;
@@ -242,6 +242,7 @@ function checkProject(rootPath) {
 }
 
 const KincTaskProvider = {
+	kmake: null,
 	provideTasks: () => {
 		let workspaceRoot = vscode.workspace.rootPath;
 		if (!workspaceRoot) {
@@ -307,7 +308,7 @@ const KincTaskProvider = {
 				}
 
 				let task = null;
-				let kmakePath = findKmake();
+				let kmakePath = KincTaskProvider.kmake; //findKmake();
 
 				// On Windows, git bash shell won't accept backward slashes and will fail,
 				// so we explicitly need to convert path to unix-style.
@@ -315,6 +316,8 @@ const KincTaskProvider = {
 				if (os.platform() === 'win32' && winShell && winShell.indexOf('bash.exe') > -1) {
 					kmakePath = kmakePath.replace(/\\/g, '/');
 				}
+
+				function compile() {}
 
 				task = new vscode.Task(kind, vscode.TaskScope.Workspace, `${prefix}Build for ${system.name}`, 'Kinc', new vscode.ShellExecution(kmakePath, args), ['$msCompile']);
 				task.group = vscode.TaskGroup.Build;
@@ -376,7 +379,7 @@ function resolveDownloadPath(filename) {
 let kincDownloaded = false;
 
 async function checkKinc() {
-	if (!isUsingInternalKinc()) {
+	if (!await isUsingInternalKinc()) {
 		return;
 	}
 
@@ -485,9 +488,12 @@ exports.activate = (context) => {
 		checkProject(vscode.workspace.rootPath);
 	}
 
-	let provider = vscode.workspace.registerTaskProvider('Kinc', KincTaskProvider);
-	context.subscriptions.push(provider);
-
+	findKmake().then((kmake) => {
+		KincTaskProvider.kmake = kmake;
+		let provider = vscode.workspace.registerTaskProvider('Kinc', KincTaskProvider);
+		context.subscriptions.push(provider);
+	});
+	
 	// TODO: Figure out why this prevents debugging
 	// let debugProvider = vscode.debug.registerDebugConfigurationProvider('kinc', KincDebugProvider);
 	// context.subscriptions.push(debugProvider);
@@ -500,7 +506,7 @@ exports.activate = (context) => {
 		}
 	});
 
-	let disposable = vscode.commands.registerCommand('kinc.init', function () {
+	let disposable = vscode.commands.registerCommand('kinc.init', async function () {
 		if (!vscode.workspace.rootPath) {
 			channel.appendLine('No project opened.');
 			return;
@@ -518,7 +524,7 @@ exports.activate = (context) => {
 			return;
 		}
 
-		const child = child_process.spawn(findKmake(channel), ['--init', '--name', 'Project', '--from', vscode.workspace.rootPath]);
+		const child = child_process.spawn(await findKmake(channel), ['--init', '--name', 'Project', '--from', vscode.workspace.rootPath]);
 
 		child.on('error', () => {
 			channel.appendLine('Could not start kmake to initialize a new project.');
