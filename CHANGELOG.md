@@ -1,3 +1,7 @@
+### 22.6.0
+
+* Execute kfiles to try and find deeply nested Kincs
+
 ### 22.5.2
 
 * Only download Kinc when it's actually needed
