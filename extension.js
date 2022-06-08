@@ -57,7 +57,145 @@ function getExtensionPath() {
 	return vscode.extensions.getExtension('kodetech.kinc').extensionPath;
 }
 
+async function findKincWithKfile(channel, directory) {
+	return new Promise((resolve, reject) => {
+		try {
+			const kfile = path.resolve(directory, 'kfile.js');
+			if (fs.existsSync(kfile)) {
+				const resolver = (project) => {
+					resolve(/*project*/);
+				};
+
+				const rejecter = () => {
+					reject();
+				};
+
+				const file = fs.readFileSync(kfile, 'utf8');
+				const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
+				const project = new AsyncFunction(
+					'log',
+					'Project',
+					'Platform',
+					'platform',
+					'GraphicsApi',
+					'graphics',
+					'Architecture',
+					'arch',
+					'AudioApi',
+					'audio',
+					'VrApi',
+					'vr',
+					'cpp',
+					'require',
+					'resolve',
+					'reject',
+					'__dirname',
+					'Options',
+					'targetDirectory',
+					file)
+					(new Proxy({}, {
+						set: (object, key, value, proxy) => {
+							return true;
+						},
+						get: (target, prop, receiver) => {
+							return () => {};
+						}
+					}),
+					Project,
+					Platform,
+					'tizen',
+					GraphicsApi,
+					'default',
+					Architecture,
+					'default',
+					AudioApi,
+					'default',
+					VrApi,
+					'none',
+					false,
+					require,
+					resolver,
+					rejecter,
+					'',
+					{},
+					'');
+			}
+			else {
+				reject();
+			}
+		}
+		catch (err) {
+			reject();
+		}
+	});
+}
+
+let currentDirectory = null;
+let kincDirectory = null;
+
+class Project {
+	constructor(name) {
+		if (name === 'Kinc') {
+			kincDirectory = currentDirectory;
+		}
+		
+		return new Proxy(this, {
+			set: (object, key, value, proxy) => {
+				return true;
+			},
+			get: (target, prop, receiver) => {
+				if (prop === 'addProject') {
+					return async (directory) => {
+						if (name === 'Kinc') {
+							return new Proxy({}, {
+								set: (object, key, value, proxy) => {
+									return true;
+								},
+								get: (target, prop, receiver) => {
+									return () => {};
+								}
+							});
+						}
+						else {
+							currentDirectory = path.resolve(currentDirectory, directory);
+							return await findKincWithKfile(channel, currentDirectory);
+						}
+					};
+				}
+				else {
+					return () => {};
+				}
+			}
+		});
+	}
+}
+
+const Platform = {
+	Tizen: 'tizen'
+};
+
+const GraphicsApi = {};
+
+const Architecture = {};
+
+const AudioApi = {};
+
+const VrApi = {};
+
+let ranKincFile = false;
+
 async function findKinc(channel) {
+	if (!ranKincFile) {
+		kincDirectory = null;
+		currentDirectory = path.resolve(vscode.workspace.rootPath);
+		await findKincWithKfile(channel, currentDirectory);
+		ranKincFile = true;
+	}
+
+	if (kincDirectory) {
+		return kincDirectory;
+	}
+
 	let localkincpath = path.resolve(vscode.workspace.rootPath, 'Kinc');
 	if (fs.existsSync(localkincpath) && (fs.existsSync(path.join(localkincpath, 'Tools', sysdir(), 'kmake' + sys2())) || fs.existsSync(path.join(localkincpath, 'Tools', 'kmake', 'kmake')))) {
 		return localkincpath;
@@ -479,10 +617,10 @@ async function updateKinc() {
 	});
 }
 
-exports.activate = (context) => {
+exports.activate = async (context) => {
 	channel = vscode.window.createOutputChannel('Kinc');
 
-	checkKinc();
+	await checkKinc();
 
 	if (vscode.workspace.rootPath) {
 		checkProject(vscode.workspace.rootPath);
