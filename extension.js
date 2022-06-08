@@ -63,7 +63,7 @@ function findKincWithKfile(channel, directory) {
 			const kfile = path.resolve(directory, 'kfile.js');
 			if (fs.existsSync(kfile)) {
 				const resolver = (project) => {
-					resolve(/*project*/);
+					resolve(project);
 				};
 
 				const rejecter = () => {
@@ -161,6 +161,9 @@ class Project {
 							return await findKincWithKfile(channel, currentDirectory);
 						}
 					};
+				}
+				else if (prop === 'then') {
+					return this;
 				}
 				else {
 					return () => {};
