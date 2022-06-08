@@ -57,7 +57,7 @@ function getExtensionPath() {
 	return vscode.extensions.getExtension('kodetech.kinc').extensionPath;
 }
 
-async function findKincWithKfile(channel, directory) {
+function findKincWithKfile(channel, directory) {
 	return new Promise((resolve, reject) => {
 		try {
 			const kfile = path.resolve(directory, 'kfile.js');
