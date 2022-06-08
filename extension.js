@@ -163,7 +163,7 @@ class Project {
 					};
 				}
 				else if (prop === 'then') {
-					return this;
+					return undefined;
 				}
 				else {
 					return () => {};
