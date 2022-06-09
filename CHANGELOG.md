@@ -1,3 +1,7 @@
+### 22.6.1
+
+* Remove outdated compile-targets
+
 ### 22.6.0
 
 * Execute kfiles to try and find deeply nested Kincs

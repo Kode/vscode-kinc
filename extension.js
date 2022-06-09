@@ -406,14 +406,12 @@ const KincTaskProvider = {
 			{ arg: 'ios', name: 'iOS (OpenGL)', default: false, graphics: 'opengl' , withdebug: false},
 			{ arg: 'pi', name: 'Raspberry Pi', default: false , withdebug: false},
 			{ arg: 'tvos', name: 'tvOS', default: false , withdebug: false},
-			{ arg: 'tizen', name: 'Tizen', default: false , withdebug: false},
 			{ arg: 'html5', name: 'HTML5', default: false , withdebug: false},
 			{ arg: 'ps4', name: 'PlayStation 4', default: false , withdebug: false},
 			{ arg: 'xboxone', name: 'Xbox One', default: false , withdebug: false},
 			{ arg: 'switch', name: 'Switch', default: false , withdebug: false},
 			{ arg: 'ps5', name: 'PlayStation 5', default: false , withdebug: false},
-			{ arg: 'xboxscarlett', name: 'Xbox Series X|S', default: false , withdebug: false},
-			{ arg: 'stadia', name: 'Stadia', default: false , withdebug: false}
+			{ arg: 'xboxscarlett', name: 'Xbox Series X|S', default: false , withdebug: false}
 		];
 
 		let tasks = [];
