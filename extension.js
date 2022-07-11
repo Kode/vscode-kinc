@@ -191,8 +191,13 @@ async function findKinc(channel) {
 	if (!ranKincFile) {
 		kincDirectory = null;
 		currentDirectory = path.resolve(vscode.workspace.rootPath);
-		await findKincWithKfile(channel, currentDirectory);
-		ranKincFile = true;
+		try {
+			await findKincWithKfile(channel, currentDirectory);
+			ranKincFile = true;
+		}
+		catch (err) {
+			
+		}
 	}
 
 	if (kincDirectory) {
