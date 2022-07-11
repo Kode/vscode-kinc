@@ -1,3 +1,7 @@
+### 22.7.0
+
+* Fix the init-command
+
 ### 22.6.1
 
 * Remove outdated compile-targets
