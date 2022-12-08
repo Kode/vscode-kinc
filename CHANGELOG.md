@@ -1,3 +1,7 @@
+### 22.12.0
+
+* Fix activation with multiple subprojects (thanks Dave)
+
 ### 22.7.0
 
 * Fix the init-command
