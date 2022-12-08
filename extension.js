@@ -138,7 +138,7 @@ class Project {
 		if (name === 'Kinc') {
 			kincDirectory = currentDirectory;
 		}
-		
+
 		return new Proxy(this, {
 			set: (object, key, value, proxy) => {
 				return true;
@@ -157,8 +157,11 @@ class Project {
 							});
 						}
 						else {
+							const prevDirectory = currentDirectory;
 							currentDirectory = path.resolve(currentDirectory, directory);
-							return await findKincWithKfile(channel, currentDirectory);
+							const r = await findKincWithKfile(channel, currentDirectory);
+							currentDirectory = prevDirectory;
+							return r;
 						}
 					};
 				}
@@ -196,7 +199,7 @@ async function findKinc(channel) {
 			ranKincFile = true;
 		}
 		catch (err) {
-			
+
 		}
 	}
 
@@ -257,39 +260,39 @@ function compile(target, silent) {
 			channel.appendLine('Saving all files.');
 			vscode.commands.executeCommand('workbench.action.files.saveAll');
 		}
-	
+
 		if (!vscode.workspace.rootPath) {
 			channel.appendLine('No project opened.');
 			reject();
 			return;
 		}
-	
+
 		if (!fs.existsSync(path.join(vscode.workspace.rootPath, 'kfile.js')) && !fs.existsSync(path.join(vscode.workspace.rootPath, 'kincfile.js')) && !fs.existsSync(path.join(vscode.workspace.rootPath, 'korefile.js'))) {
 			channel.appendLine('No kfile found.');
 			reject();
 			return;
 		}
-	
+
 		if (fs.existsSync(path.join(vscode.workspace.rootPath, 'khafile.js'))) {
 			channel.appendLine('khafile found.');
 			reject();
 			return;
 		}
-	
+
 		const child = child_process.spawn(await findKmake(channel), createOptions(target, true));
-	
+
 		child.stdout.on('data', (data) => {
 			channel.appendLine(data);
 		});
-	
+
 		child.stderr.on('data', (data) => {
 			channel.appendLine(data);
 		});
-	
+
 		child.on('error', () => {
 			channel.appendLine('Could not start kmake to compile the project.');
 		});
-	
+
 		child.on('close', (code) => {
 			if (code === 0) {
 				resolve();
@@ -559,7 +562,7 @@ async function checkKinc() {
 					}
 
 					resolve();
-				});				
+				});
 			}
 			else {
 				message.dispose();
@@ -607,7 +610,7 @@ async function updateKinc() {
 					}
 
 					resolve();
-				});				
+				});
 			}
 			else {
 				message.dispose();
@@ -637,7 +640,7 @@ exports.activate = async (context) => {
 		let provider = vscode.workspace.registerTaskProvider('Kinc', KincTaskProvider);
 		context.subscriptions.push(provider);
 	});
-	
+
 	// TODO: Figure out why this prevents debugging
 	// let debugProvider = vscode.debug.registerDebugConfigurationProvider('kinc', KincDebugProvider);
 	// context.subscriptions.push(debugProvider);
