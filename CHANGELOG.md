@@ -1,3 +1,7 @@
+### 23.1.0
+
+* Unify the graphics-backends-defaults-situation with the latest changes in Kinc
+
 ### 22.12.0
 
 * Fix activation with multiple subprojects (thanks Dave)
