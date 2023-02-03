@@ -408,7 +408,7 @@ const KincTaskProvider = {
 			{ arg: 'osx', name: 'macOS', default: false , withdebug: true},
 			{ arg: 'osx', name: 'macOS (OpenGL)', default: false, graphics: 'opengl' , withdebug: true},
 			{ arg: 'linux', name: 'Linux', default: false , withdebug: true},
-			{ arg: 'linux', name: 'Linux (Vulkan)', default: false, graphics: 'vulkan' , withdebug: true},
+			{ arg: 'linux', name: 'Linux (OpenGL)', default: false, graphics: 'opengl' , withdebug: true},
 			{ arg: 'android', name: 'Android', default: false , withdebug: false},
 			{ arg: 'ios', name: 'iOS', default: false , withdebug: false},
 			{ arg: 'ios', name: 'iOS (OpenGL)', default: false, graphics: 'opengl' , withdebug: false},
