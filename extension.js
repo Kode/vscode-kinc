@@ -654,6 +654,11 @@ exports.activate = async (context) => {
 		}
 	});
 
+	const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.workspace.workspaceFolders[0], '{kfile.js,kincfile.js,korefile.js}'));
+	context.subscriptions.push(watcher.onDidChange((filePath) => {
+		checkProject(vscode.workspace.workspaceFolders[0]);
+	}));
+
 	let disposable = vscode.commands.registerCommand('kinc.init', async function () {
 		if (!vscode.workspace.rootPath) {
 			channel.appendLine('No project opened.');
