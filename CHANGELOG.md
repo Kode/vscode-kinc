@@ -1,3 +1,7 @@
+### 23.3.0
+
+* Automatically update the vscode-support-files when the kfile changes
+
 ### 23.1.0
 
 * Unify the graphics-backends-defaults-situation with the latest changes in Kinc
