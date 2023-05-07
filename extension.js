@@ -116,7 +116,7 @@ function findKincWithKfile(channel, directory) {
 					require,
 					resolver,
 					rejecter,
-					'',
+					path.resolve(directory),
 					{},
 					'');
 			}
@@ -125,6 +125,7 @@ function findKincWithKfile(channel, directory) {
 			}
 		}
 		catch (err) {
+			channel.appendLine('Error when searching for Kinc in the kfile: ' + err);
 			reject();
 		}
 	});

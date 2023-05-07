@@ -1,3 +1,7 @@
+### 23.5.0
+
+* Fix \_\_dirname when searching for Kinc
+
 ### 23.3.0
 
 * Automatically update the vscode-support-files when the kfile changes
