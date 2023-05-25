@@ -461,9 +461,14 @@ const KincTaskProvider = {
 
 				// On Windows, git bash shell won't accept backward slashes and will fail,
 				// so we explicitly need to convert path to unix-style.
-				const winShell = vscode.workspace.getConfiguration('terminal.integrated.shell').get('windows');
-				if (os.platform() === 'win32' && winShell && winShell.indexOf('bash.exe') > -1) {
-					kmakePath = kmakePath.replace(/\\/g, '/');
+				if (os.platform() === 'win32') {
+					let winShell = vscode.workspace.getConfiguration('terminal.integrated.shell').get('windows');
+					if (!winShell) {
+						winShell = vscode.workspace.getConfiguration('terminal.integrated.defaultProfile').get('windows');
+					}
+					if (winShell && winShell.toLowerCase().includes('bash') > -1) {
+						kmakePath = kmakePath.replace(/\\/g, '/');
+					}
 				}
 
 				function compile() {}
