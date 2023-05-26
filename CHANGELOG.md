@@ -1,3 +1,7 @@
+### 23.5.1
+
+* Make things more robust with Git-Bash
+
 ### 23.5.0
 
 * Fix \_\_dirname when searching for Kinc
