@@ -57,6 +57,7 @@ function getExtensionPath() {
 	return vscode.extensions.getExtension('kodetech.kinc').extensionPath;
 }
 
+// will error when findKinc is used
 function findKincWithKfile(channel, directory) {
 	return new Promise((resolve, reject) => {
 		try {
@@ -118,7 +119,12 @@ function findKincWithKfile(channel, directory) {
 					rejecter,
 					path.resolve(directory),
 					{},
-					'');
+					'').catch(
+						(err) => {
+							channel.appendLine('Error when searching for Kinc in the kfile: ' + err);
+							reject();
+						}
+					);;
 			}
 			else {
 				reject();
@@ -221,8 +227,8 @@ async function findKinc(channel) {
 	return path.join(getExtensionPath(), 'Kinc');
 }
 
-async function isUsingInternalKinc() {
-	return await findKinc() === path.join(getExtensionPath(), 'Kinc');
+async function isUsingInternalKinc(channel) {
+	return await findKinc(channel) === path.join(getExtensionPath(), 'Kinc');
 }
 
 async function findKmake(channel) {
@@ -356,7 +362,7 @@ async function chmodEverything() {
 	fs.chmodSync(path.join(base, 'Tools', sysdir(), 'kmake'), 0o755);
 }
 
-async function checkProject(rootPath) {
+async function checkProject(rootPath, channel) {
 	if (!fs.existsSync(path.join(rootPath, 'kfile.js'))) {
 		return;
 	}
@@ -365,7 +371,7 @@ async function checkProject(rootPath) {
 		return;
 	}
 
-	if (await isUsingInternalKinc()) {
+	if (await isUsingInternalKinc(channel)) {
 		chmodEverything()
 	}
 
@@ -532,8 +538,8 @@ function resolveDownloadPath(filename) {
 
 let kincDownloaded = false;
 
-async function checkKinc() {
-	if (!await isUsingInternalKinc()) {
+async function checkKinc(channel) {
+	if (!await isUsingInternalKinc(channel)) {
 		return;
 	}
 
@@ -636,13 +642,13 @@ async function updateKinc() {
 exports.activate = async (context) => {
 	channel = vscode.window.createOutputChannel('Kinc');
 
-	await checkKinc();
+	await checkKinc(channel);
 
 	if (vscode.workspace.rootPath) {
-		checkProject(vscode.workspace.rootPath);
+		checkProject(vscode.workspace.rootPath, channel);
 	}
 
-	findKmake().then((kmake) => {
+	findKmake(channel).then((kmake) => {
 		KincTaskProvider.kmake = kmake;
 		let provider = vscode.workspace.registerTaskProvider('Kinc', KincTaskProvider);
 		context.subscriptions.push(provider);
