@@ -1,3 +1,7 @@
+### 24.4.0
+
+* Catch errors properly when running kfiles to figure out the path to Kinc
+
 ### 23.5.1
 
 * Make things more robust with Git-Bash

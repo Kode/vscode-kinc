@@ -2,7 +2,7 @@
 	"name": "kinc",
 	"displayName": "Kinc",
 	"description": "Kinc support",
-	"version": "23.5.1",
+	"version": "24.4.0",
 	"publisher": "kodetech",
 	"engines": {
 		"vscode": "^1.64.0"
